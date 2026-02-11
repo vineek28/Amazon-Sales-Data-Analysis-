@@ -459,3 +459,49 @@ SELECT
 FROM sellers_reports
 GROUP BY 1, 2
 
+/*
+12. Product Profit Margin
+Calculate the profit margin for each product (difference between price and cost of goods sold).
+Challenge: Rank products by their profit margin, showing highest to lowest.
+*/
+
+select * from products;
+select * from order_items;
+
+--profit = (total_sales - cogs*quatity) 
+
+
+select p.product_id, p.product_name, sum(o.total_sales - p.cogs * o.quantity) as profit, 
+sum(o.total_sales - p.cogs * o.quantity)/ sum(o.total_sales) * 100 as profit_margin, 
+dense_rank() over(order by sum(o.total_sales - p.cogs * o.quantity)/ sum(o.total_sales) * 100 desc )
+from products p 
+join order_items o on (p.product_id = o.product_id)
+group by 1,2;
+
+
+/*
+13. Most Returned Products
+Query the top 10 products by the number of returns.
+Challenge: Display the return rate as a percentage of total units sold for each product.
+*/
+
+-- p-o-oi
+select p.product_id, product_name, count(*) as total_items_quantity, 
+sum(case when o.order_status = 'Returned' then 1 else 0 end) as return_count, 
+sum(case when o.order_status = 'Returned' then 1 else 0 end)::numeric / count(*):: numeric * 100 as return_percentage
+from products p 
+join order_items oi on (oi.product_id = p.product_id) 
+join orders o on (o.order_id = oi.order_id)
+group by 1, 2
+order by 5 desc limit 10;
+
+/* 
+14. Inactive Sellers
+Identify sellers who haven’t made any sales in the last 6 months.
+Challenge: Show the last sale date and total sales from those sellers.
+*/
+
+
+
+
+
