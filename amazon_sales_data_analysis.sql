@@ -413,51 +413,36 @@ Find the top 5 sellers based on total sales value.
 Challenge: Include both successful and failed orders, and display their percentage of successful orders.
 */
 
-WITH top_sellers
-AS
-(SELECT 
-	s.seller_id,
-	s.seller_name,
-	SUM(oi.total_sales) as total_sale
-FROM orders as o
-JOIN
-sellers as s
-ON o.seller_id = s.seller_id
-JOIN 
-order_items as oi
-ON oi.order_id = o.order_id
-GROUP BY 1, 2
-ORDER BY 3 DESC
-LIMIT 5
-),
+select * from sellers;
+select * from orders;
+select * from order_items;
 
-sellers_reports
-AS
-(SELECT 
-	o.seller_id,
-	ts.seller_name,
-	o.order_status,
-	COUNT(*) as total_orders
-FROM orders as o
-JOIN 
-top_sellers as ts
-ON ts.seller_id = o.seller_id
-WHERE 
-	o.order_status NOT IN ('Inprogress', 'Returned')
-	
-GROUP BY 1, 2, 3
+with top_5_sellers as
+(select s.seller_id, s.seller_name, sum(oi.total_sales)
+from sellers s
+join orders o on (o.seller_id = s.seller_id)
+join order_items oi on (o.order_id = oi.order_id)
+group by 1, 2
+order by sum(oi.total_sales) desc
+limit 5),
+seller_reports as
+(
+select o.seller_id, o.order_status, count(o.order_status) as total_orders
+from sellers s
+join orders o on (o.seller_id = s.seller_id)
+join top_5_sellers ts on (ts.seller_id = o.seller_id)
+where (o.order_status = 'Completed' or o.order_status = 'Cancelled')
+group by 1,2
 )
-SELECT 
-	seller_id,
-	seller_name,
-	SUM(CASE WHEN order_status = 'Completed' THEN total_orders ELSE 0 END) as Completed_orders,
-	SUM(CASE WHEN order_status = 'Cancelled' THEN total_orders ELSE 0 END) as Cancelled_orders,
-	SUM(total_orders) as total_orders,
-	SUM(CASE WHEN order_status = 'Completed' THEN total_orders ELSE 0 END)::numeric/
-	SUM(total_orders)::numeric * 100 as successful_orders_percentage
-	
-FROM sellers_reports
-GROUP BY 1, 2
+
+SELECT seller_id,
+sum(case when order_status = 'Completed' then total_orders else 0 end) as completed_orders,
+sum(case when order_status = 'Cancelled' then total_orders else 0 end) as cancelled_orders,
+sum(total_orders) as sum_total,
+sum(case when order_status = 'Completed' then total_orders else 0 end)::numeric/sum(total_orders) :: numeric * 100 as total_order_complete_percentage
+FROM seller_reports
+group by seller_id
+order by 1;
 
 /*
 12. Product Profit Margin
@@ -500,6 +485,7 @@ order by 5 desc limit 10;
 Identify sellers who haven’t made any sales in the last 6 months.
 Challenge: Show the last sale date and total sales from those sellers.
 */
+
 
 
 
